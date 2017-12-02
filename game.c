@@ -146,7 +146,7 @@ void generate_level(Tile * tiles, int width, int height) {
     putchar('s');
 }
 
-void update_level(Tile * tiles, int width, int height, int player_direction, Session * session) {
+void update_level(Tile * tiles, int width, int height, int player_respection, Session * session) {
     Tile new_tiles[width * height];
     memcpy(new_tiles, tiles, width * height * sizeof(*tiles));
 
@@ -162,10 +162,10 @@ void update_level(Tile * tiles, int width, int height, int player_direction, Ses
             if (old->entity == PLAYER) {
                 int new_x = x;
                 int new_y = y;
-                if (player_direction == UP)    --new_y;
-                if (player_direction == DOWN)  ++new_y;
-                if (player_direction == LEFT)  --new_x;
-                if (player_direction == RIGHT) ++new_x;
+                if (player_respection == UP)    --new_y;
+                if (player_respection == DOWN)  ++new_y;
+                if (player_respection == LEFT)  --new_x;
+                if (player_respection == RIGHT) ++new_x;
 
                 Tile * new_pos = &new_tiles[new_x + new_y * width];
                 if (new_pos->type == WALL || new_pos->entity == LOCK) {
@@ -196,11 +196,11 @@ void update_level(Tile * tiles, int width, int height, int player_direction, Ses
             } else if (old->entity == SPIDER) {
                 int new_x = x;
                 int new_y = y;
-                int direction = random_int_range(UP, RIGHT);
-                if (direction == UP)    --new_y;
-                if (direction == DOWN)  ++new_y;
-                if (direction == LEFT)  --new_x;
-                if (direction == RIGHT) ++new_x;
+                int respection = random_int_range(UP, RIGHT);
+                if (respection == UP)    --new_y;
+                if (respection == DOWN)  ++new_y;
+                if (respection == LEFT)  --new_x;
+                if (respection == RIGHT) ++new_x;
 
                 Tile * new_pos = &new_tiles[new_x + new_y * width];
                 if (new_pos->type == WALL ||
@@ -250,8 +250,8 @@ int main(int argc, char ** argv) {
 
     seed_rng(~SDL_GetPerformanceCounter(), SDL_GetTicks());
 
-    char dir;
-    SDL_CreateThread(io_thread, "io", &dir);
+    char response = '\0';
+    SDL_CreateThread(io_thread, "io", &response);
 
     {
         SDL_Surface * surface = SDL_LoadBMP("sheet.bmp");
@@ -279,50 +279,63 @@ int main(int argc, char ** argv) {
 
     Tile tiles[level_width * level_height];
     generate_level(tiles, level_width, level_height);
-    Session current_session = {.health = 10};
+    Session current_session = {
+        .health = 10
+    };
 
     int end_time;
 
     while (true) {
         SDL_Event event;
-        end_time = SDL_GetTicks() + 30 * 1000;
+        //end_time = SDL_GetTicks() + 30 * 1000;
+
+        if(response == 's')
+        {
+            
+            response = '\0';
+        } 
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) exit(0);
 
             if (event.type == SDL_KEYDOWN) {
                 SDL_Scancode sc = event.key.keysym.scancode;
-                // int player_direction = 0;
-                // if (sc == SDL_SCANCODE_UP)    player_direction = UP;
-                // if (sc == SDL_SCANCODE_DOWN)  player_direction = DOWN;
-                // if (sc == SDL_SCANCODE_LEFT)  player_direction = LEFT;
-                // if (sc == SDL_SCANCODE_RIGHT) player_direction = RIGHT;
-                if (sc == SDL_SCANCODE_R) {
+                if (sc == SDL_SCANCODE_UP || sc == SDL_SCANCODE_W) {
+                    putchar('u');
+                }else if (sc == SDL_SCANCODE_DOWN || sc == SDL_SCANCODE_S) {
+                    putchar('d');
+                } else if (sc == SDL_SCANCODE_LEFT || sc == SDL_SCANCODE_A) {
+                    putchar('l');
+                } else if (sc == SDL_SCANCODE_RIGHT || sc == SDL_SCANCODE_D) {
+                    putchar('r');
+                } else if (sc == SDL_SCANCODE_RETURN && !end_time) {
+                    putchar('s');
+                    end_time = SDL_GetTicks() + 30 * 1000;
+                } else if (sc == SDL_SCANCODE_R) {
                     current_session = (Session){.health = 10};
                     generate_level(tiles, level_width, level_height);
                 }
-
-                // if (player_direction) {
-                //     update_level(tiles, level_width, level_height,
-                //         player_direction, &current_session);
-                // }
+                fflush(stdout);
             }
         }
+        
 
         {
-            // dir
             int player_direction = 0;
-            if (dir == 'u') player_direction = UP;   else
-            if (dir == 'd') player_direction = DOWN; else
-            if (dir == 'l') player_direction = LEFT; else
-            if (dir == 'r') player_direction = RIGHT;
-            if (dir == 'e') {
+            if (response == 'u') player_direction = UP;   else
+            if (response == 'd') player_direction = DOWN; else
+            if (response == 'l') player_direction = LEFT; else
+            if (response == 'r') player_direction = RIGHT;
+            if (response == 'e') {
+                //TODO: Game Over
                 generate_level(tiles, level_width, level_height);
             }
             if (player_direction) {
                 update_level(tiles, level_width, level_height,
                     player_direction, &current_session);
             }
-            dir = '\0';
+            response = '\0';
+
+            if (SDL_GetTicks() > end_time && end_time) putchar('e');
         }
 
 
