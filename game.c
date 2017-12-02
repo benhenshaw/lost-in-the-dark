@@ -335,8 +335,8 @@ int main(int argc, char ** argv) {
                 if(finished && otherPlayerFinished)
                 {
                     generate_level(tiles, level_width, level_height);
-                    //session->levels_cleared += 1;
-                    //session->key_found = false;
+                    current_session.levels_cleared += 1;
+                    current_session.key_found = false;
                 }
             }
             response = '\0';
