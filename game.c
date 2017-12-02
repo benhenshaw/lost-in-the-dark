@@ -283,10 +283,12 @@ int main(int argc, char ** argv) {
 
     int end_time;
     bool otherPlayerFinished = false;
-
+    bool game_over = false;
+    
     while (true) {
         SDL_Event event;
         //end_time = SDL_GetTicks() + 30 * 1000;
+        
 
         if(response == 's')
         {
@@ -326,7 +328,11 @@ int main(int argc, char ** argv) {
             if (response == 'd') player_direction = DOWN; else
             if (response == 'l') player_direction = LEFT; else
             if (response == 'r') player_direction = RIGHT;
-            if (response == 'e') generate_level(tiles, level_width, level_height); //TODO: Game Over
+            if (response == 'e') {
+                game_over = true;
+                //generate_level(tiles, level_width, level_height); //TODO: Game Over
+
+            }
             
             if (player_direction) {
                 bool finished = update_level(tiles, level_width, level_height,
@@ -347,25 +353,25 @@ int main(int argc, char ** argv) {
 
         SDL_SetRenderDrawColor(renderer, 29, 32, 33, 255);
         SDL_RenderClear(renderer);
-
-        for (int y = 0; y < level_height; ++y) {
-            for (int x = 0; x < level_width; ++x) {
-                Tile tile = tiles[x + y * level_width];
-                draw_sprite(tile.type, (x+1) * tile_size, (y+1) * tile_size);
-                draw_sprite(tile.entity, (x+1) * tile_size, (y+1) * tile_size);
+        if (!game_over) {
+            for (int y = 0; y < level_height; ++y) {
+                for (int x = 0; x < level_width; ++x) {
+                    Tile tile = tiles[x + y * level_width];
+                    draw_sprite(tile.type, (x+1) * tile_size, (y+1) * tile_size);
+                    draw_sprite(tile.entity, (x+1) * tile_size, (y+1) * tile_size);
+                }
             }
+
+            draw_sprite(PLAYER, 32, 0);
+            draw_number(current_session.health, 72, 12);
+            draw_sprite(GOLD_SMALL, 160, 0);
+            draw_number(current_session.score, 200, 12);
+            draw_sprite(EXIT, 288, 0);
+            draw_number(current_session.levels_cleared, 328, 12);
+            draw_sprite(SPIDER, 416, 0);
+            draw_number(current_session.enemies_defeated, 456, 12);
+            if (current_session.key_found) draw_sprite(KEY, 512, 0);
         }
-
-        draw_sprite(PLAYER, 32, 0);
-        draw_number(current_session.health, 72, 12);
-        draw_sprite(GOLD_SMALL, 160, 0);
-        draw_number(current_session.score, 200, 12);
-        draw_sprite(EXIT, 288, 0);
-        draw_number(current_session.levels_cleared, 328, 12);
-        draw_sprite(SPIDER, 416, 0);
-        draw_number(current_session.enemies_defeated, 456, 12);
-        if (current_session.key_found) draw_sprite(KEY, 512, 0);
-
         SDL_RenderPresent(renderer);
 
     }
