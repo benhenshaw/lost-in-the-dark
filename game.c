@@ -308,7 +308,7 @@ int main(int argc, char ** argv) {
         if(response == 's')
         {
             end_time = SDL_GetTicks() + 30 * 1000;
-            response = '\0';
+            net_response.response = '\0';
         }
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) exit(0);
@@ -339,7 +339,7 @@ int main(int argc, char ** argv) {
 
         {
             int player_direction = 0;
-            if (response == 'k') other_player_has_key = true;
+            //if () other_player_has_key = true;
             if (response == 'u') player_direction = UP;   else
             if (response == 'd') player_direction = DOWN; else
             if (response == 'l') player_direction = LEFT; else
@@ -355,14 +355,14 @@ int main(int argc, char ** argv) {
                 bool finished = update_level(tiles, level_width, level_height,
                     player_direction, &current_session, other_player_has_key);
                 if(finished) putchar('f');
-                if(finished && other_player_has_key)
+                if(finished && net_response.has_key)
                 {
                     generate_level(tiles, level_width, level_height);
                     current_session.levels_cleared += 1;
                     current_session.key_found = false;
                 }
             }
-            response = '\0';
+            net_response.response = '\0';
 
             if (SDL_GetTicks() > end_time && end_time) putchar('e');
         }
