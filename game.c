@@ -55,6 +55,17 @@ enum {
     GOLD_LARGE,
 };
 
+enum {
+    MOVE_UP = 1,
+    MOVE_DOWN,
+    MOVE_LEFT,
+    MOVE_RIGHT,
+    HAVE_KEY,
+    RESET_LEVEL,
+    START_GAME,
+    END_GAME,
+};
+
 struct {
     u16 x, y;
     u8 r, g, b;
@@ -146,7 +157,7 @@ void generate_level(Tile * tiles, int width, int height) {
     putchar('s');
 }
 
-bool update_level(Tile * tiles, int width, int height, int player_respection, Session * session) {
+bool update_level(Tile * tiles, int width, int height, int player_respection, Session * session, bool other_player_has_key) {
     Tile new_tiles[width * height];
     memcpy(new_tiles, tiles, width * height * sizeof(*tiles));
 
@@ -156,7 +167,7 @@ bool update_level(Tile * tiles, int width, int height, int player_respection, Se
             Tile * tile = &new_tiles[x + y * width];
 
             if (old->type == EXIT) {
-                tile->entity = session->key_found ? 0 : LOCK;
+                tile->entity = session->key_found && other_player_has_key ? 0 : LOCK;
             }
 
             if (old->entity == PLAYER) {
@@ -282,9 +293,9 @@ int main(int argc, char ** argv) {
     };
 
     int end_time;
-    bool otherPlayerFinished = false;
+    bool other_player_has_key = false;
     bool game_over = false;
-    
+
     while (true) {
         SDL_Event event;
         //end_time = SDL_GetTicks() + 30 * 1000;
@@ -315,6 +326,7 @@ int main(int argc, char ** argv) {
                     current_session = (Session){.health = 10};
                     generate_level(tiles, level_width, level_height);
                 }
+                if(session.key_found) putchar('k');
                 fflush(stdout);
             }
             
@@ -323,22 +335,23 @@ int main(int argc, char ** argv) {
 
         {
             int player_direction = 0;
-            if (response == 'f') otherPlayerFinished = true;
+            if (response == 'k') other_player_has_key = true;
             if (response == 'u') player_direction = UP;   else
             if (response == 'd') player_direction = DOWN; else
             if (response == 'l') player_direction = LEFT; else
             if (response == 'r') player_direction = RIGHT;
             if (response == 'e') {
                 game_over = true;
+                putchar('e');
                 //generate_level(tiles, level_width, level_height); //TODO: Game Over
 
             }
             
             if (player_direction) {
                 bool finished = update_level(tiles, level_width, level_height,
-                    player_direction, &current_session);
+                    player_direction, &current_session, other);
                 if(finished) putchar('f');
-                if(finished && otherPlayerFinished)
+                if(finished && other_player_has_key)
                 {
                     generate_level(tiles, level_width, level_height);
                     current_session.levels_cleared += 1;
