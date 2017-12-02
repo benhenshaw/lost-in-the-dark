@@ -230,8 +230,10 @@ bool update_level(Tile * tiles, int width, int height, int player_respection, Se
 
 int io_thread(void * data) {
     while (true) {
-        char * c = data;
-        *c = getchar();
+        struct { char response; bool has_key; } * r = data;
+        char c = getchar();
+        r->has_key = c & BIT(7);
+        r->response = c & ~(BIT(7));
         SDL_Delay(10);
     }
 }
@@ -258,9 +260,6 @@ int main(int argc, char ** argv) {
     SDL_RenderSetIntegerScale(renderer, true);
 
     seed_rng(~SDL_GetPerformanceCounter(), SDL_GetTicks());
-
-    char response = '\0';
-    SDL_CreateThread(io_thread, "io", &response);
 
     {
         SDL_Surface * surface = SDL_LoadBMP("sheet.bmp");
@@ -292,20 +291,24 @@ int main(int argc, char ** argv) {
         .health = 10
     };
 
+    struct { char response; bool has_key; } net_response;
+    SDL_CreateThread(io_thread, "io", &net_response);
+
+    char response = net_response.response;
     int end_time;
-    bool other_player_has_key = false;
+    bool other_player_has_key = net_response.has_key;
     bool game_over = false;
 
     while (true) {
         SDL_Event event;
         //end_time = SDL_GetTicks() + 30 * 1000;
-        
+
 
         if(response == 's')
         {
             end_time = SDL_GetTicks() + 30 * 1000;
             response = '\0';
-        } 
+        }
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) exit(0);
 
@@ -326,12 +329,12 @@ int main(int argc, char ** argv) {
                     current_session = (Session){.health = 10};
                     generate_level(tiles, level_width, level_height);
                 }
-                if(session.key_found) putchar('k');
+                if (current_session.key_found) putchar('k');
                 fflush(stdout);
             }
-            
+
         }
-        
+
 
         {
             int player_direction = 0;
@@ -346,10 +349,10 @@ int main(int argc, char ** argv) {
                 //generate_level(tiles, level_width, level_height); //TODO: Game Over
 
             }
-            
+
             if (player_direction) {
                 bool finished = update_level(tiles, level_width, level_height,
-                    player_direction, &current_session, other);
+                    player_direction, &current_session, other_player_has_key);
                 if(finished) putchar('f');
                 if(finished && other_player_has_key)
                 {
