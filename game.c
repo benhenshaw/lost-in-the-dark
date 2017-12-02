@@ -294,12 +294,13 @@ int main(int argc, char ** argv) {
     struct { char response; bool has_key; } net_response;
     SDL_CreateThread(io_thread, "io", &net_response);
 
-    char response = net_response.response;
+    
     int end_time;
     bool other_player_has_key = net_response.has_key;
     bool game_over = false;
 
     while (true) {
+        char response = net_response.response;
         SDL_Event event;
         //end_time = SDL_GetTicks() + 30 * 1000;
 
