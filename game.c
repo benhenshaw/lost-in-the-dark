@@ -146,7 +146,7 @@ void generate_level(Tile * tiles, int width, int height) {
     putchar('s');
 }
 
-void update_level(Tile * tiles, int width, int height, int player_respection, Session * session) {
+bool update_level(Tile * tiles, int width, int height, int player_respection, Session * session) {
     Tile new_tiles[width * height];
     memcpy(new_tiles, tiles, width * height * sizeof(*tiles));
 
@@ -175,10 +175,7 @@ void update_level(Tile * tiles, int width, int height, int player_respection, Se
                 if (new_pos->type == SPIKES) {
                     session->health -= 1;
                 } else if (new_pos->type == EXIT) {
-                    generate_level(new_tiles, width, height);
-                    session->levels_cleared += 1;
-                    session->key_found = false;
-                    break;
+                    return true;
                 }
 
                 if (new_pos->entity == GOLD_SMALL) {
@@ -216,6 +213,7 @@ void update_level(Tile * tiles, int width, int height, int player_respection, Se
         }
     }
     memcpy(tiles, new_tiles, width * height * sizeof(*tiles));
+    return false;
 }
 
 
@@ -284,6 +282,7 @@ int main(int argc, char ** argv) {
     };
 
     int end_time;
+    bool otherPlayerFinished = false;
 
     while (true) {
         SDL_Event event;
@@ -291,7 +290,7 @@ int main(int argc, char ** argv) {
 
         if(response == 's')
         {
-            
+            end_time = SDL_GetTicks() + 30 * 1000;
             response = '\0';
         } 
         while (SDL_PollEvent(&event)) {
@@ -316,22 +315,29 @@ int main(int argc, char ** argv) {
                 }
                 fflush(stdout);
             }
+            
         }
         
 
         {
             int player_direction = 0;
+            if (response == 'f') otherPlayerFinished = true;
             if (response == 'u') player_direction = UP;   else
             if (response == 'd') player_direction = DOWN; else
             if (response == 'l') player_direction = LEFT; else
             if (response == 'r') player_direction = RIGHT;
-            if (response == 'e') {
-                //TODO: Game Over
-                generate_level(tiles, level_width, level_height);
-            }
+            if (response == 'e') generate_level(tiles, level_width, level_height); //TODO: Game Over
+            
             if (player_direction) {
-                update_level(tiles, level_width, level_height,
+                bool finished = update_level(tiles, level_width, level_height,
                     player_direction, &current_session);
+                if(finished) putchar('f');
+                if(finished && otherPlayerFinished)
+                {
+                    generate_level(tiles, level_width, level_height);
+                    //session->levels_cleared += 1;
+                    //session->key_found = false;
+                }
             }
             response = '\0';
 
